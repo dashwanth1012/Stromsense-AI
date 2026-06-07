@@ -1,5 +1,7 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Header, HTTPException, Depends, status, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 import requests
 import joblib
@@ -14,6 +16,7 @@ import base64
 import json
 import hmac
 import time
+from pathlib import Path
 
 from bs4 import BeautifulSoup
 from datetime import datetime, timezone, timedelta
@@ -54,6 +57,54 @@ latest_file_analyzed = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CAPE_TRACE_PATH = os.path.join(BASE_DIR, "data", "cape_traceability.json")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+FRONTEND_DIST_DIR = PROJECT_ROOT / "frontend" / "dist"
+FRONTEND_INDEX_FILE = FRONTEND_DIST_DIR / "index.html"
+FRONTEND_ASSETS_DIR = FRONTEND_DIST_DIR / "assets"
+BACKEND_ROUTE_PREFIXES = {
+    "auth",
+    "cwc",
+    "docs",
+    "openapi.json",
+    "redoc",
+    "history",
+    "system-status",
+    "stream",
+    "storm-escalation",
+    "trend-analysis",
+}
+
+
+def frontend_build_available():
+    return FRONTEND_INDEX_FILE.is_file()
+
+
+def request_prefers_html(request: Request):
+    return "text/html" in request.headers.get("accept", "").lower()
+
+
+def frontend_index_response():
+    if not frontend_build_available():
+        raise HTTPException(status_code=404, detail="StormSense AI frontend build not found. Run npm run build in frontend/.")
+    return FileResponse(FRONTEND_INDEX_FILE)
+
+
+def frontend_static_file_response(path: str):
+    if not FRONTEND_DIST_DIR.exists():
+        return None
+    try:
+        candidate = (FRONTEND_DIST_DIR / path).resolve()
+        candidate.relative_to(FRONTEND_DIST_DIR.resolve())
+    except ValueError:
+        return None
+    if candidate.is_file():
+        return FileResponse(candidate)
+    return None
+
+
+def is_backend_route_prefix(path: str):
+    first_segment = path.strip("/").split("/", 1)[0].lower()
+    return first_segment in BACKEND_ROUTE_PREFIXES
 
 
 def infer_operational_cycle(now_utc=None):
@@ -366,6 +417,9 @@ class OverrideRequest(BaseModel):
 # ==========================================
 
 app = FastAPI()
+
+if FRONTEND_ASSETS_DIR.is_dir():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_ASSETS_DIR)), name="frontend-assets")
 
 
 @app.on_event("startup")
@@ -1502,7 +1556,9 @@ def fetch_station_data(
 # ==========================================
 
 @app.get("/")
-def home():
+def home(request: Request):
+    if request_prefers_html(request) and frontend_build_available():
+        return frontend_index_response()
 
     return {
 
@@ -1516,7 +1572,10 @@ def home():
 # ==========================================
 
 @app.get("/forecast")
-def forecast():
+def forecast(request: Request):
+    if request_prefers_html(request) and frontend_build_available():
+        return frontend_index_response()
+
     refresh_cycle_lock_metadata()
     all_forecasts = []
 
@@ -3201,4 +3260,19 @@ def export_cwc_analysis(
         )
     else:
         return analysis_data
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+def serve_frontend_spa(full_path: str, request: Request):
+    if is_backend_route_prefix(full_path):
+        raise HTTPException(status_code=404, detail="Backend route not found")
+
+    static_response = frontend_static_file_response(full_path)
+    if static_response:
+        return static_response
+
+    if frontend_build_available() and (request_prefers_html(request) or not Path(full_path).suffix):
+        return frontend_index_response()
+
+    raise HTTPException(status_code=404, detail="Frontend asset not found")
 
