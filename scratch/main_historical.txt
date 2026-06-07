@@ -1,0 +1,100 @@
+2421:             "contributors": get_contribs(current_row, "squall"),
+2422:             "reason": "Elevated low-level kinetic wind shear favors outflow gusts." if squall_val >= 40 else "Weak kinetic environmental shear suppresses squalls."
+2423:         },
+2424:         "nwx": {
+2425:             "current": nwx_val,
+2426:             "previous": prev_nwx,
+2427:             "delta": round(nwx_val - prev_nwx, 1),
+2428:             "contributors": [{"name": "CIN", "weight": 50.0}, {"name": "Lapse Rates", "weight": 50.0}],
+2429:             "reason": "Tropopause stable columns restrict storm development." if nwx_val >= 50 else "Convective triggers dominate, high storm probability."
+2430:         }
+2431:     }
+2432: 
+2433: 
+2434: @app.get("/cwc/historical-dates")
+2435: def get_cwc_historical_dates(file_name: str = None):
+2436:     db = analysis_engines.load_historical_observations(file_name=file_name)
+2437:     dates = []
+2438:     for r in db:
+2439:         is_storm = bool(r.get("thunderstorm"))
+2440:         dates.append({
+2441:             "date": r.get("date"),
+2442:             "station": r.get("station"),
+2443:             "station_code": r.get("station_code"),
+2444:             "observed": r.get("observed"),
+2445:             "thunderstorm": r.get("thunderstorm"),
+2446:             "lightning": r.get("lightning"),
+2447:             "squall": r.get("squall"),
+2448:             "rainfall": r.get("rainfall"),
+2449:             "nwx": r.get("nwx"),
+2450:             "season": r.get("season"),
+2451:             "cape": float(r.get("cape", 0.0)),
+2452:             "li": float(r.get("li", 0.0)),
+2453:             "pwat": float(r.get("pwat", 0.0)),
+2454:             "sweat": float(r.get("sweat", 0.0)),
+2455:             "bulk_shear": 19.8 if is_storm else 12.0,
+2456:             "theta_e": 360.5 if is_storm else 340.0,
+2457:         })
+2458:     dates.sort(key=lambda x: x["date"], reverse=True)
+2459:     return dates
+2460: 
+2461: @app.get("/cwc/historical-analysis")
+2462: def get_cwc_historical_analysis(
+2463:     date: str, 
+2464:     station: str, 
+2465:     file_name: str = None,
+2466:     cape_t: float | None = None, 
+2467:     li_t: float | None = None, 
+2468:     pwat_t: float | None = None, 
+2469:     sweat_t: float | None = None, 
+2470:     k_t: float | None = None
+2471: ):
+2472:     db = analysis_engines.load_historical_observations(file_name=file_name)
+2473:     matching_row = None
+2474:     row_idx = -1
+2475:     for idx, r in enumerate(db):
+2476:         if r.get("date") == date and r.get("station") == station:
+2477:             matching_row = r
+2478:             row_idx = idx
+2479:             break
+2480:             
+2481:     if not matching_row:
+2482:         raise HTTPException(status_code=404, detail=f"No record found for date {date} and station {station}")
+2483:         
+2484:     custom_thresholds = {}
+2485:     if cape_t is not None: custom_thresholds["cape"] = cape_t
+2486:     if li_t is not None: custom_thresholds["li"] = li_t
+2487:     if pwat_t is not None: custom_thresholds["pwat"] = pwat_t
+2488:     if sweat_t is not None: custom_thresholds["sweat"] = sweat_t
+2489:     if k_t is not None: custom_thresholds["k_index"] = k_t
+2490:     
+2491:     trace = analysis_engines.get_historical_step_trace(matching_row, custom_thresholds)
+2492:     
+2493:     t = {
+2494:         "cape": custom_thresholds.get("cape", 2100.0),
+2495:         "li": custom_thresholds.get("li", -4.5),
+2496:         "pwat": custom_thresholds.get("pwat", 50.0)
+2497:     }
+2498:     cape_val = matching_row.get("cape", 0.0)
+2499:     li_val = matching_row.get("li", 0.0)
+2500:     pwat_val = matching_row.get("pwat", 0.0)
+2501:     
+2502:     pred_ts = cape_val >= t["cape"] and li_val <= t["li"] and pwat_val >= t["pwat"]
+2503:     obs_ts = bool(matching_row.get("thunderstorm"))
+2504:     
+2505:     match_pct = 100.0 if pred_ts == obs_ts else 0.0
+2506:     
+2507:     baseline_rows = [{
+2508:         "station": station,
+2509:         "cape": cape_val,
+2510:         "lifted_index": li_val,
+2511:         "sweat_index": matching_row.get("sweat", 0.0),
+2512:         "k_index": matching_row.get("k_index", 0.0),
+2513:         "pwat": pwat_val,
+2514:         "tt_index": matching_row.get("tt_index", 48.0),
+2515:         "sounding_available": True
+2516:     }]
+2517:     probs = analysis_engines.run_probabilistic_forecast_for_rows(baseline_rows).get("probabilistic_rows", [])
+2518:     prob_detail = probs[0] if probs else {}
+2519:     
+2520:     # Stepper logic and quality checks (Step 1)

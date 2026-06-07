@@ -1,0 +1,40 @@
+2711:     # Calculate district impacts based on selected historical row values
+2712:     impact_row = {
+2713:         "cape": cape_val,
+2714:         "pwat": pwat_val,
+2715:         "bulk_shear": 19.8 if obs_ts else 12.0,
+2716:         "lightning_probability": reproduction["lightning_probability"],
+2717:         "heavy_rain_probability": reproduction["heavy_rain_probability"],
+2718:         "severe_ts_probability": 80.0 if (obs_ts and matching_row.get("observed") in ["Severe TS", "SQ"]) else 20.0,
+2719:         "moisture_convergence": 8.0 if pwat_val >= 60 else 4.0
+2720:     }
+2721:     district_impacts = analysis_engines.compute_district_impact(impact_row)
+2722:     
+2723:     return {
+2724:         "district_impacts": district_impacts,
+2725:         "analog_similarity": trace.get("analog_similarity", 95.0),
+2726:         "evolution": evolution,
+2727:         "probability_traceability": prob_trace,
+2728:         "date": date,
+2729:         "station": station,
+2730:         "station_code": matching_row.get("station_code"),
+2731:         "source": file_name or "imd_observational_records.xlsx",
+2732:         "observation_timestamp": f"{date} {matching_row.get('time')}",
+2733:         "forecast_timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S IST"),
+2734:         "observed_event": matching_row.get("observed"),
+2735:         "step_by_step_trace": trace["steps"],
+2736:         "parameter_explainers": trace["explainers"],
+2737:         "trigger_contributions": trace["trigger_contributions"],
+2738:         "primary_trigger": trace["primary_trigger"],
+2739:         "secondary_trigger": trace["secondary_trigger"],
+2740:         "forecast_reproduction": reproduction,
+2741:         "derived_indices": trace["derived_indices"],
+2742:         "data_ingestion_audit": ingestion_audit,
+2743:         "raw_parameters": raw_parameters,
+2744:         "thermodynamic_index_engine": trace["thermodynamic_index_engine"],
+2745:         "threshold_comparison_engine": trace["threshold_comparison_engine"],
+2746:         "observed_thunderstorm_detection": {
+2747:             "occurred": "YES" if obs_ts else "NO",
+2748:             "event_type": matching_row.get("observed"),
+2749:             "severity": "SEVERE" if matching_row.get("observed") in ["Severe TS", "SQ"] else "MODERATE" if matching_row.get("observed") in ["TS", "TSRA"] else "NONE"
+2750:         },

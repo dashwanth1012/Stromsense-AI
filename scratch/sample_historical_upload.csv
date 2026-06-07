@@ -1,0 +1,4 @@
+date,time,station,station_code,observed_event,cape,li,pwat,sweat,k_index
+2025-04-12,12Z,Visakhapatnam,43150,TSRA,2850,-7.5,68,340,38
+2025-04-13,00Z,Machilipatnam,43185,NWX,950,-1.2,42,180,24
+2025-05-02,12Z,Machilipatnam,43185,Severe TS,2600,-6.4,61,360,36

@@ -1,0 +1,16 @@
+import re
+with open('frontend/src/components/modules/ResearchHub.jsx', 'r', encoding='utf-8') as f:
+    content = f.read()
+
+lines = content.splitlines()
+
+# Search for renderAccordionStep(X, "Title"
+pattern = r'renderAccordionStep\(\s*(\d+)\s*,\s*\"([^\"]+)\"'
+matches = list(re.finditer(pattern, content))
+
+print(f"Found {len(matches)} accordion steps:")
+for m in matches:
+    step_num = m.group(1)
+    title = m.group(2)
+    line_num = content.count('\n', 0, m.start()) + 1
+    print(f"Step {step_num}: {title} at line {line_num}")

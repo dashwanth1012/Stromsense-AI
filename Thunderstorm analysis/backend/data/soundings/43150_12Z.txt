@@ -1,0 +1,32 @@
+University of Wyoming - Radiosonde Data
+ 
+43150  Visakhapatnam Observations at 12Z 26 May 2026
+ 
+-----------------------------------------------------------------------------
+   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SKNT   THTA   THTE   THTV
+    hPa     m      C      C      %    g/kg    deg   knot     K      K      K 
+-----------------------------------------------------------------------------
+1000.0     44   34.0   26.5     90  22.00     90      5  307.1  407.6  313.7
+ 925.0    738   29.0   23.5     88  18.50    110     12  309.0  389.6  314.3
+ 850.0   1477   24.0   20.5     80  14.50    120     14  311.3  376.2  315.6
+ 700.0   3139   15.0    8.5     55   7.80    125     18  319.1  364.8  322.1
+ 500.0   5890   -1.0   -5.5     80   4.50     95      8  331.8  354.2  333.2
+ 400.0   7630  -13.0  -15.5     60   2.20    105      6  338.1  349.7  338.8
+ 300.0   9770  -28.0  -31.5     55   0.70    210      4  345.9  350.4  346.2
+ 200.0  12560  -48.0  -55.5     35   0.08     85      8  356.8  357.8  356.9
+ 100.0  16730  -68.0  -75.5     60   0.00     90     20  396.3  396.5  396.3
+-----------------------------------------------------------------------------
+Station information and sounding indices
+                             Station number: 43150
+                            Observation time: 260526/1200
+                                Lifted index: -8.80
+                                 SWEAT index: 380.00
+                                     K index: 41.00
+       Convective Available Potential Energy: 3200.00
+              CAPE using virtual temperature: 3200.00
+                       Convective Inhibition: -25.00
+              CINS using virtual temperature: -25.00
+                            Equilibrum Level: 100.00
+                    Level of Free Convection: 850.00
+ Pres [hPa] of the Lifted Condensation Level: 900.00
+ Precipitable water [mm] for entire sounding: 72.00

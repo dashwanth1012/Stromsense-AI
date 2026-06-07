@@ -1,0 +1,17 @@
+{
+  "cache_age": "12d 5h",
+  "cache_age_hours": 293.52,
+  "cycle_time": null,
+  "error": "Wyoming response did not include a valid sounding table.",
+  "fetch_timestamp": "2026-06-07T15:35:48Z",
+  "freshness_score": 10,
+  "last_live_attempt": "2026-06-07T15:35:54Z",
+  "last_successful_calculation": "2026-06-07T15:36:11Z",
+  "last_successful_download": null,
+  "last_update": "2026-05-26T10:04:44Z",
+  "retry_count": 35,
+  "sounding_file": "C:\\Users\\USER\\Thunderstorm analysis\\backend\\data\\soundings\\43128_00Z.txt",
+  "source_status": "FALLBACK",
+  "source_type": "LOCAL_SOUNDING_CACHE",
+  "station": "43128"
+}

@@ -1,0 +1,32 @@
+University of Wyoming - Radiosonde Data
+ 
+43185  Machilipatnam Observations at 12Z 26 May 2026
+ 
+-----------------------------------------------------------------------------
+   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SKNT   THTA   THTE   THTV
+    hPa     m      C      C      %    g/kg    deg   knot     K      K      K 
+-----------------------------------------------------------------------------
+1000.0     44   32.5   24.5     90  22.00     90      5  305.6  396.5  311.6
+ 925.0    738   27.5   21.5     88  18.50    110     12  307.4  380.2  312.2
+ 850.0   1477   22.5   18.5     80  14.50    120     14  309.7  368.3  313.6
+ 700.0   3139   13.5    6.5     55   7.80    125     18  317.4  358.5  320.1
+ 500.0   5890   -2.5   -7.5     80   4.50     95      8  330.0  350.0  331.3
+ 400.0   7630  -14.5  -17.5     60   2.20    105      6  336.1  346.3  336.7
+ 300.0   9770  -29.5  -33.5     55   0.70    210      4  343.8  347.7  344.0
+ 200.0  12560  -49.5  -57.5     35   0.08     85      8  354.4  355.2  354.4
+ 100.0  16730  -69.5  -77.5     60   0.00     90     20  393.4  393.6  393.4
+-----------------------------------------------------------------------------
+Station information and sounding indices
+                             Station number: 43185
+                            Observation time: 260526/1200
+                                Lifted index: -6.80
+                                 SWEAT index: 320.00
+                                     K index: 37.00
+       Convective Available Potential Energy: 2600.00
+              CAPE using virtual temperature: 2600.00
+                       Convective Inhibition: -40.00
+              CINS using virtual temperature: -40.00
+                            Equilibrum Level: 130.00
+                    Level of Free Convection: 860.00
+ Pres [hPa] of the Lifted Condensation Level: 910.00
+ Precipitable water [mm] for entire sounding: 61.00

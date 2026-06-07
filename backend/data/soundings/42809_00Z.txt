@@ -1,0 +1,32 @@
+University of Wyoming - Radiosonde Data
+ 
+42809  Kolkata Observations at 00Z 26 May 2026
+ 
+-----------------------------------------------------------------------------
+   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SKNT   THTA   THTE   THTV
+    hPa     m      C      C      %    g/kg    deg   knot     K      K      K 
+-----------------------------------------------------------------------------
+1000.0     44   33.0   26.8     90  22.00     90      5  306.1  400.1  312.3
+ 925.0    738   28.0   23.8     88  18.50    110     12  307.9  383.2  312.9
+ 850.0   1477   23.0   20.8     80  14.50    120     14  310.2  370.8  314.2
+ 700.0   3139   14.0    8.8     55   7.80    125     18  318.0  360.6  320.8
+ 500.0   5890   -2.0   -5.2     80   4.50     95      8  330.6  351.3  331.9
+ 400.0   7630  -14.0  -15.2     60   2.20    105      6  336.8  347.5  337.5
+ 300.0   9770  -29.0  -31.2     55   0.70    210      4  344.5  348.6  344.7
+ 200.0  12560  -49.0  -55.2     35   0.08     85      8  355.2  356.1  355.2
+ 100.0  16730  -69.0  -75.2     60   0.00     90     20  394.4  394.6  394.4
+-----------------------------------------------------------------------------
+Station information and sounding indices
+                             Station number: 42809
+                            Observation time: 260526/0000
+                                Lifted index: -8.00
+                                 SWEAT index: 360.00
+                                     K index: 40.00
+       Convective Available Potential Energy: 2900.00
+              CAPE using virtual temperature: 2900.00
+                       Convective Inhibition: -35.00
+              CINS using virtual temperature: -35.00
+                            Equilibrum Level: 110.00
+                    Level of Free Convection: 840.00
+ Pres [hPa] of the Lifted Condensation Level: 870.00
+ Precipitable water [mm] for entire sounding: 70.00

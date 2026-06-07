@@ -1,0 +1,31 @@
+FORECAST_LAB starts at: 4230
+4205:                       )}
+4206:                     </div>
+4207:                   ))}
+4208: 
+4209:                   {/* STEP 12: Export Packaging */}
+4210:                   {renderAccordionStep(12, "Export Packaging", (
+4211:                     <div>
+4212:                       <span className="font-technical" style={{ fontSize: "10px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "8px" }}>● STEP 12 — DOCKET FILE EXPORT CHANNELS</span>
+4213:                       <div style={{ display: "flex", justifyContent: "center", gap: "15px", padding: "10px 0" }}>
+4214:                         <button className="glow-btn-blue interactive-action" onClick={() => handleExportFile("csv")} style={{ padding: "10px 20px", borderRadius: "8px", fontSize: "11px", fontWeight: "bold" }}>💾 Export CSV File</button>
+4215:                         <button className="glow-btn-blue interactive-action" onClick={() => handleExportFile("json")} style={{ padding: "10px 20px", borderRadius: "8px", fontSize: "11px", fontWeight: "bold" }}>💾 Export JSON File</button>
+4216:                         <button className="glow-btn-blue interactive-action" onClick={() => handleExportFile("xlsx")} style={{ padding: "10px 20px", borderRadius: "8px", fontSize: "11px", fontWeight: "bold" }}>💾 Export Excel File</button>
+4217:                         <button className="glow-btn-blue interactive-action" onClick={() => handleExportFile("pdf")} style={{ padding: "10px 20px", borderRadius: "8px", fontSize: "11px", fontWeight: "bold" }}>💾 Export PDF Report</button>
+4218:                       </div>
+4219:                     </div>
+4220:                   ))}
+4221:                 </div>
+4222:               </div>
+4223:             );
+4224:           })()}
+4225:         </div>
+4226:       )}
+4227:       </ErrorBoundary>
+4228: 
+4229:         <ErrorBoundary fallbackTitle="⚠ Forecast Lab Rendering Error">
+4230:         {activeTab === "FORECAST_LAB" && (
+4231:           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+4232:             <div>
+4233:               <h2 style={{ fontSize: "18px", color: "#ffffff", fontWeight: "bold" }}>🔬 Custom Convective Sounding Forecast Lab</h2>
+4234:               <p style={{ fontSize: "12px", color: "#64748b" }}>Perform thermodynamic profile tuning simulations, upload sounding spreadsheets, and trace the full decision pipeline</p>

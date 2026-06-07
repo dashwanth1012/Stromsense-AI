@@ -1,0 +1,17 @@
+{
+  "cache_age": "11d 23h",
+  "cache_age_hours": 287.41,
+  "cycle_time": null,
+  "error": "HTTP 503",
+  "fetch_timestamp": "2026-06-07T09:29:17Z",
+  "freshness_score": 10,
+  "last_live_attempt": "2026-06-07T09:29:24Z",
+  "last_successful_calculation": "2026-06-07T09:36:31Z",
+  "last_successful_download": null,
+  "last_update": "2026-05-26T10:04:44Z",
+  "retry_count": 33,
+  "sounding_file": "C:\\Users\\USER\\Thunderstorm analysis\\backend\\data\\soundings\\43150_00Z.txt",
+  "source_status": "FALLBACK",
+  "source_type": "LOCAL_SOUNDING_CACHE",
+  "station": "43150"
+}

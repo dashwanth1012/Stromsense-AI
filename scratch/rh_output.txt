@@ -1,0 +1,200 @@
+5001:                         </div>
+5002:                         <div>
+5003:                           <span style={{ fontSize: "8px", color: "#64748b", display: "block" }}>BIAS</span>
+5004:                           <strong style={{ color: "#ffffff" }}>{historicalAnalysis?.forecast_vs_observed?.validation_metrics?.bias ?? "1.05"}</strong>
+5005:                         </div>
+5006:                       </div>
+5007:                       <div style={{ fontSize: "10.5px", color: "#cbd5e1", borderTop: "1px solid #1e293b", paddingTop: "8px", display: "flex", flexDirection: "column", gap: "3px" }}>
+5008:                         <div>Primary Trigger: <strong style={{ color: "#ffffff" }}>{historicalAnalysis?.primary_trigger}</strong></div>
+5009:                         <div>Best Analog Match: <strong style={{ color: "#ffffff" }}>{historicalAnalysis?.meteorologist_explanation?.analog_ref?.date}</strong> ({historicalAnalysis?.analog_similarity}% similarity)</div>
+5010:                         <div style={{ marginTop: "4px", color: "#94a3b8" }}>
+5011:                           <strong>Narrative:</strong> {historicalAnalysis?.meteorologist_explanation?.imd_scientific_explanation}
+5012:                         </div>
+5013:                       </div>
+5014:                     </div>
+5015: 
+5016:                     {/* 12-Indices Table */}
+5017:                     <div className="panel-surface" style={{ backgroundColor: "#0b0f19", padding: "14px", border: "1px solid #1e293b", borderRadius: "10px" }}>
+5018:                       <span className="font-technical" style={{ fontSize: "9px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "8px", letterSpacing: "1px" }}>● 12 CONVECTIVE PARAMETERS TRACE & AUDIT DETECT</span>
+5019:                       <div style={{ overflowX: "auto" }}>
+5020:                         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "10px", textAlign: "left" }}>
+5021:                           <thead>
+5022:                             <tr style={{ borderBottom: "1px solid #334155", color: "#94a3b8" }}>
+5023:                               <th style={{ padding: "4px" }}>Index</th>
+5024:                               <th style={{ padding: "4px" }}>Observed</th>
+5025:                               <th style={{ padding: "4px" }}>Limit</th>
+5026:                               <th style={{ padding: "4px" }}>Delta</th>
+5027:                               <th style={{ padding: "4px" }}>Status</th>
+5028:                               <th style={{ padding: "4px" }}>Weight</th>
+5029:                             </tr>
+5030:                           </thead>
+5031:                           <tbody>
+5032:                             {["CAPE", "CIN", "LI", "PWAT", "SWEAT", "K Index", "TT Index", "Bulk Shear", "Theta-E", "LCL", "LFC", "EL"].map((idxName) => {
+5033:                               const details = getIndexDetails(idxName);
+5034:                               const isEx = details.status === "EXCEEDED" || details.status === "SUPPORTIVE" || details.status === "ABOVE";
+5035:                               return (
+5036:                                 <tr key={idxName} style={{ borderBottom: "1px solid #1e293b", color: "#cbd5e1" }}>
+5037:                                   <td style={{ padding: "4px 2px", fontWeight: "bold", color: "#ffffff" }}>{idxName}</td>
+5038:                                   <td style={{ padding: "4px 2px", fontFamily: "JetBrains Mono" }}>{details.observed}</td>
+5039:                                   <td style={{ padding: "4px 2px", fontFamily: "JetBrains Mono", color: "#64748b" }}>{details.threshold}</td>
+5040:                                   <td style={{ padding: "4px 2px", fontFamily: "JetBrains Mono", color: details.difference?.includes("+") ? "#10b981" : details.difference?.includes("-") && details.difference !== "-" ? "#ef4444" : "#cbd5e1" }}>
+5041:                                     {details.difference}
+5042:                                   </td>
+5043:                                   <td style={{ padding: "4px 2px" }}>
+5044:                                     <span style={{ color: isEx ? "#ef4444" : "#64748b", fontWeight: "bold", fontSize: "8.5px" }}>
+5045:                                       {isEx ? "⚠️ BREACHED" : "OK"}
+5046:                                     </span>
+5047:                                   </td>
+5048:                                   <td style={{ padding: "4px 2px", fontFamily: "JetBrains Mono", color: "#facc15" }}>{details.contribution}</td>
+5049:                                 </tr>
+5050:                               );
+5051:                             })}
+5052:                           </tbody>
+5053:                         </table>
+5054:                       </div>
+5055:                     </div>
+5056: 
+5057:                   </div>
+5058:                 )}
+5059:               </div>
+5060: 
+5061:               {/* Right Column: Reviewer Signature Section (Always Visible) */}
+5062:               <div className="panel-surface" style={{ backgroundColor: "#0b0f19", padding: "16px", border: "1px solid #a855f7", borderRadius: "12px", boxShadow: "0px 4px 16px rgba(168, 85, 247, 0.05)", height: "fit-content" }}>
+5063:                 <span className="font-technical" style={{ fontSize: "10px", color: "#c084fc", fontWeight: "bold", display: "block", marginBottom: "12px", letterSpacing: "1px" }}>● REVIEWER DOCKET SIGNATURE</span>
+5064:                 
+5065:                 {auditSigned ? (
+5066:                   <div style={{ display: "flex", flexDirection: "column", gap: "10px", textAlign: "center", padding: "10px 0" }}>
+5067:                     <span style={{ fontSize: "24px" }}>✍️</span>
+5068:                     <h4 style={{ color: "#ffffff", fontSize: "13px", fontWeight: "bold", margin: 0 }}>CWC AUDIT SIGNED</h4>
+5069:                     <div style={{ fontSize: "11px", color: "#cbd5e1", backgroundColor: "#020617", padding: "10px", borderRadius: "8px", border: "1px solid #1e293b", fontFamily: "JetBrains Mono", textAlign: "left", display: "flex", flexDirection: "column", gap: "4px" }}>
+5070:                       <div>Verdict: <strong style={{ color: "#a855f7" }}>{auditVerdict}</strong></div>
+5071:                       <div>Name: <strong style={{ color: "#ffffff" }}>{reviewerName}</strong></div>
+5072:                       <div>Docket ID: <strong style={{ color: "#ffffff" }}>{reviewerId}</strong></div>
+5073:                       <div>Comments: <strong style={{ color: "#ffffff" }}>{reviewerComments || "None"}</strong></div>
+5074:                       <div style={{ color: "#64748b", marginTop: "4px", fontSize: "9.5px" }}>Signed: {signTimestamp}</div>
+5075:                     </div>
+5076:                     <button
+5077:                       onClick={() => setAuditSigned(false)}
+5078:                       className="font-technical"
+5079:                       style={{ margin: "10px auto 0 auto", padding: "6px 12px", border: "1px solid #334155", borderRadius: "6px", backgroundColor: "transparent", color: "#94a3b8", cursor: "pointer", fontSize: "10px" }}
+5080:                     >
+5081:                       Modify Signature
+5082:                     </button>
+5083:                   </div>
+5084:                 ) : (
+5085:                   <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+5086:                     <div>
+5087:                       <label className="font-technical" style={{ display: "block", fontSize: "9px", color: "#94a3b8", marginBottom: "4px" }}>REVIEWER NAME:</label>
+5088:                       <input
+5089:                         type="text"
+5090:                         placeholder="e.g. Dr. A. K. Mitra"
+5091:                         value={reviewerName}
+5092:                         onChange={(e) => setReviewerName(e.target.value)}
+5093:                         style={{ width: "100%", backgroundColor: "#020617", color: "#ffffff", border: "1px solid #334155", borderRadius: "6px", padding: "6px", fontSize: "11px" }}
+5094:                       />
+5095:                     </div>
+5096:                     <div>
+5097:                       <label className="font-technical" style={{ display: "block", fontSize: "9px", color: "#94a3b8", marginBottom: "4px" }}>REVIEWER ID / DOCKET NUMBER:</label>
+5098:                       <input
+5099:                         type="text"
+5100:                         placeholder="e.g. IMD-MET-CWC-431"
+5101:                         value={reviewerId}
+5102:                         onChange={(e) => setReviewerId(e.target.value)}
+5103:                         style={{ width: "100%", backgroundColor: "#020617", color: "#ffffff", border: "1px solid #334155", borderRadius: "6px", padding: "6px", fontSize: "11px", fontFamily: "JetBrains Mono" }}
+5104:                       />
+5105:                     </div>
+5106:                     <div>
+5107:                       <label className="font-technical" style={{ display: "block", fontSize: "9px", color: "#94a3b8", marginBottom: "4px" }}>FINAL CASE VERDICT:</label>
+5108:                       <select
+5109:                         value={auditVerdict}
+5110:                         onChange={(e) => setAuditVerdict(e.target.value)}
+5111:                         style={{ width: "100%", backgroundColor: "#020617", color: "#ffffff", border: "1px solid #334155", borderRadius: "6px", padding: "6px", fontSize: "11px" }}
+5112:                       >
+5113:                         <option value="APPROVED">APPROVED</option>
+5114:                         <option value="APPROVED_WITH_NOTES">APPROVED WITH NOTES</option>
+5115:                         <option value="REQUIRES_REVIEW">REQUIRES REVIEW</option>
+5116:                         <option value="REJECTED">REJECTED</option>
+5117:                       </select>
+5118:                     </div>
+5119:                     <div>
+5120:                       <label className="font-technical" style={{ display: "block", fontSize: "9px", color: "#94a3b8", marginBottom: "4px" }}>AUDIT NARRATIVE / REMARKS:</label>
+5121:                       <textarea
+5122:                         placeholder="Add scientific review commentary for this case..."
+5123:                         rows={3}
+5124:                         value={reviewerComments}
+5125:                         onChange={(e) => setReviewerComments(e.target.value)}
+5126:                         style={{ width: "100%", backgroundColor: "#020617", color: "#ffffff", border: "1px solid #334155", borderRadius: "6px", padding: "6px", fontSize: "11px", resize: "none" }}
+5127:                       />
+5128:                     </div>
+5129:                     <button
+5130:                       onClick={() => {
+5131:                         if (!reviewerName.trim()) {
+5132:                           alert("Please enter a valid Reviewer Name!");
+5133:                           return;
+5134:                         }
+5135:                         if (!reviewerId.trim()) {
+5136:                           alert("Please enter a valid Reviewer ID/Docket Number!");
+5137:                           return;
+5138:                         }
+5139:                         setSignTimestamp(new Date().toLocaleString());
+5140:                         setAuditSigned(true);
+5141:                       }}
+5142:                       className="glow-btn-blue interactive-action"
+5143:                       style={{ width: "100%", padding: "8px", borderRadius: "6px", fontWeight: "bold", fontSize: "11px", border: "none", marginTop: "4px" }}
+5144:                     >
+5145:                       ✍️ SUBMIT AUDIT VERDICT SIGNATURE
+5146:                     </button>
+5147:                   </div>
+5148:                 )}
+5149:               </div>
+5150: 
+5151:             </div>
+5152: 
+5153:           </div>
+5154:         )}
+5155:         </ErrorBoundary>
+5156: 
+5157:         {/* TAB 3: INDEX GLOSSARY */}
+5158:         <ErrorBoundary fallbackTitle="⚠ Instability Indices Rendering Error">
+5159:         {activeTab === "INDEX_GLOSSARY" && (
+5160:           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+5161:             <div>
+5162:               <h2 style={{ fontSize: "18px", color: "#ffffff", fontWeight: "bold" }}>Thermodynamic Convective Instability Indices</h2>
+5163:               <p style={{ fontSize: "12px", color: "#64748b" }}>Meteorological parameters and indexes used for severe convective prediction models</p>
+5164:             </div>
+5165: 
+5166:             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+5167:               {convectiveIndices.map((idx) => (
+5168:                 <div key={idx.symbol} style={{
+5169:                   backgroundColor: "#020617",
+5170:                   border: "1px solid #1e293b",
+5171:                   borderRadius: "12px",
+5172:                   padding: "16px",
+5173:                   display: "grid",
+5174:                   gridTemplateColumns: "220px 1fr 120px",
+5175:                   gap: "20px",
+5176:                   alignItems: "center"
+5177:                 }}>
+5178:                   <div>
+5179:                     <span style={{ fontSize: "14px", fontWeight: "bold", color: "#ffffff" }}>{idx.name}</span>
+5180:                     <span className="font-technical" style={{ display: "block", fontSize: "10px", color: "#3b82f6", marginTop: "2px" }}>Symbol: {idx.symbol}</span>
+5181:                   </div>
+5182:                   <div>
+5183:                     <p style={{ fontSize: "12px", color: "#94a3b8", lineHeight: "1.4" }}>{idx.desc}</p>
+5184:                     <div style={{ color: "#a855f7", fontWeight: "bold", fontSize: "11px", marginTop: "4px" }}>
+5185:                       ✏️ WHAT DOES THIS MEAN? {idx.meaning}
+5186:                     </div>
+5187:                   </div>
+5188:                   <div style={{ textAlign: "right" }}>
+5189:                     <span className="font-technical" style={{ fontSize: "12px", fontWeight: "bold", color: "#ef4444" }}>
+5190:                       Threshold: {idx.critical}
+5191:                     </span>
+5192:                     <span style={{ display: "block", fontSize: "10px", color: "#64748b", marginTop: "4px" }}>Range: {idx.range}</span>
+5193:                   </div>
+5194:                 </div>
+5195:               ))}
+5196:             </div>
+5197:           </div>
+5198:         )}
+5199:         </ErrorBoundary>
+5200: 
