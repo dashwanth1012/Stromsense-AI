@@ -1,6 +1,6 @@
 from typing import Any
 
-from database import (
+from backend.database import (
     database_configured,
     database_status,
     execute_write,

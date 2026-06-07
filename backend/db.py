@@ -1,4 +1,4 @@
-from connection_pool import fetch_all, fetch_one, get_database_status
+from backend.connection_pool import fetch_all, fetch_one, get_database_status
 
 
 def health_check():
