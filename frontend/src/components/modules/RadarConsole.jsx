@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { MapContainer, TileLayer, Circle, CircleMarker, Popup, useMap, SVGOverlay, Polyline } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { GISAdapter } from "../../services/WeatherAdapter";
+import { apiGet } from "../../services/apiClient";
 
 // Helper component to handle active map flyTo zoom and coordinates focus
 function MapController({ centerLocation }) {
@@ -34,33 +35,23 @@ export default function RadarConsole({
   useEffect(() => {
     let active = true;
     const fetchCapeTrace = async () => {
-      const ports = [8000, 8002, 8001, 8004];
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}/cwc/cape-traceability`);
-          if (res.ok) {
-            const data = await res.json();
-            if (active) {
-              setCapeTrace(data);
-              break;
-            }
-          }
-        } catch (e) {}
+      try {
+        const data = await apiGet("/cwc/cape-traceability");
+        if (active) {
+          setCapeTrace(data);
+        }
+      } catch (e) {
+        // silent fallback
       }
     };
     const fetchHistory = async () => {
-      const ports = [8000, 8002, 8001, 8004];
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}/history`);
-          if (res.ok) {
-            const data = await res.json();
-            if (active) {
-              setHistoryList(data);
-              break;
-            }
-          }
-        } catch (e) {}
+      try {
+        const data = await apiGet("/history");
+        if (active) {
+          setHistoryList(data);
+        }
+      } catch (e) {
+        // silent fallback
       }
     };
     fetchCapeTrace();

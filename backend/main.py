@@ -383,9 +383,18 @@ async def cwc_startup_health_log():
 # ENABLE CORS
 # ==========================================
 
+def _cors_origin_list() -> list[str]:
+    raw = os.getenv("CORS_ALLOW_ORIGINS", "*")
+    origins = [item.strip() for item in raw.split(",") if item.strip()]
+    return origins or ["*"]
+
+
+cors_allow_origin_regex = os.getenv("CORS_ALLOW_ORIGIN_REGEX", "").strip() or None
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origin_list(),
+    allow_origin_regex=cors_allow_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

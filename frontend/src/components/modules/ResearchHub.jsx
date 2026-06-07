@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { fallbackHistoricalDates } from "./fallback_data";
+import { apiGet, apiPost, apiUpload, buildApiUrl } from "../../services/apiClient";
 
 // Severe Convective Glossary terms definition to fix missing variable bug
 const terms = [
@@ -987,44 +988,31 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
     setArchiveUploadAnalysis(null);
     setArchiveUploadLoading(true);
 
-    const candidatePorts = [8000, 8010, 8002, 8001, 8004];
     let lastError = "Historical dataset analyzer is unavailable.";
+    let timeoutId = null;
 
     try {
-      for (const port of candidatePorts) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
-        try {
-          const response = await fetch(`http://127.0.0.1:${port}/cwc/analyze-historical-dataset`, {
-            method: "POST",
-            body: formData,
-            signal: controller.signal
-          });
-          clearTimeout(timeoutId);
-
-          if (response.ok) {
-            const payload = await response.json();
-            setArchiveUploadAnalysis(payload.analysis);
-            setArchiveUploadLoading(false);
-            return;
-          }
-
-          const errorPayload = await response.json().catch(() => ({}));
-          lastError = errorPayload.detail || `Analyzer returned HTTP ${response.status} on port ${port}.`;
-        } catch (err) {
-          clearTimeout(timeoutId);
-          lastError = err.name === "AbortError"
-            ? `Analyzer timed out on port ${port}.`
-            : `Analyzer unavailable on port ${port}.`;
-        }
-      }
-
-      setArchiveUploadError(lastError);
-    } finally {
+      const formData = new FormData();
+      formData.append("file", file);
+      const controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), 30000);
+      const payload = await apiUpload("/cwc/analyze-historical-dataset", formData, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      setArchiveUploadAnalysis(payload.analysis);
       setArchiveUploadLoading(false);
+      return;
+    } catch (err) {
+      lastError = err.name === "AbortError"
+        ? "Analyzer timed out."
+        : (err.response?.data?.detail || err.operationalMessage || err.message || lastError);
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
+
+    setArchiveUploadError(lastError);
+    setArchiveUploadLoading(false);
   };
 
   // Newest supplied thunderstorm observation across the full archive.
@@ -1274,13 +1262,10 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/cwc/historical-files");
-        if (res.ok) {
-          const files = await res.json();
-          setHistoricalFiles(files);
-          if (files.length > 0) {
-            setSelectedFile(files[0]);
-          }
+        const files = await apiGet("/cwc/historical-files");
+        setHistoricalFiles(files);
+        if (files.length > 0) {
+          setSelectedFile(files[0]);
         }
       } catch (err) {
         console.error("Error loading historical files:", err);
@@ -1294,15 +1279,13 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
     if (!selectedFile) return;
     const fetchDates = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/cwc/historical-dates?file_name=${selectedFile}`);
-        if (res.ok) {
-          const data = await res.json();
-          setHistoricalDates(data);
-          if (data.length > 0) {
-            const firstViz = data.find(d => d.station === "Visakhapatnam") || data[0];
-            setSelectedDate(firstViz.date);
-            setSelectedHistStation(firstViz.station);
-          }
+        const params = new URLSearchParams({ file_name: selectedFile });
+        const data = await apiGet(`/cwc/historical-dates?${params.toString()}`);
+        setHistoricalDates(data);
+        if (data.length > 0) {
+          const firstViz = data.find(d => d.station === "Visakhapatnam") || data[0];
+          setSelectedDate(firstViz.date);
+          setSelectedHistStation(firstViz.station);
         }
       } catch (err) {
         console.error("Error loading historical dates:", err);
@@ -1321,30 +1304,23 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
       const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       // 1. Fetch active selected station
-      const url = `http://127.0.0.1:8000/cwc/historical-analysis?date=${selectedDate}&station=${selectedHistStation}&file_name=${selectedFile}`;
-      const res = await fetch(url, { signal: controller.signal });
-      if (res.ok) {
-        const data = await res.json();
-        setHistoricalAnalysis(data);
-      } else {
-        throw new Error("HTTP status " + res.status);
-      }
+      const params = new URLSearchParams({
+        date: selectedDate,
+        station: selectedHistStation,
+        file_name: selectedFile,
+      });
+      const data = await apiGet(`/cwc/historical-analysis?${params.toString()}`, { signal: controller.signal });
+      setHistoricalAnalysis(data);
 
       // 2. Fetch Visakhapatnam comparison data
-      const vUrl = `http://127.0.0.1:8000/cwc/historical-analysis?date=${selectedDate}&station=Visakhapatnam&file_name=${selectedFile}`;
-      const vRes = await fetch(vUrl, { signal: controller.signal });
-      if (vRes.ok) {
-        const vData = await vRes.json();
-        setVizagAnalysis(vData);
-      }
+      const vParams = new URLSearchParams({ date: selectedDate, station: "Visakhapatnam", file_name: selectedFile });
+      const vData = await apiGet(`/cwc/historical-analysis?${vParams.toString()}`, { signal: controller.signal });
+      setVizagAnalysis(vData);
 
       // 3. Fetch Machilipatnam comparison analysis
-      const mUrl = `http://127.0.0.1:8000/cwc/historical-analysis?date=${selectedDate}&station=Machilipatnam&file_name=${selectedFile}`;
-      const mRes = await fetch(mUrl, { signal: controller.signal });
-      if (mRes.ok) {
-        const mData = await mRes.json();
-        setMacAnalysis(mData);
-      }
+      const mParams = new URLSearchParams({ date: selectedDate, station: "Machilipatnam", file_name: selectedFile });
+      const mData = await apiGet(`/cwc/historical-analysis?${mParams.toString()}`, { signal: controller.signal });
+      setMacAnalysis(mData);
       clearTimeout(timeoutId);
     } catch (err) {
       console.warn("Historical Analysis API failed, using client-side verification engine fallback:", err);
@@ -1372,19 +1348,11 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch("http://127.0.0.1:8000/cwc/research-verification", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(verifyInput),
+      const data = await apiPost("/cwc/research-verification", verifyInput, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      if (res.ok) {
-        const data = await res.json();
-        setVerificationResult(data);
-      } else {
-        throw new Error("HTTP Status " + res.status);
-      }
+      setVerificationResult(data);
     } catch (err) {
       console.warn("Verification API failed, using client-side verification engine fallback:", err);
       const fallbackResult = clientSideRunVerification(verifyInput, historicalDates);
@@ -1431,18 +1399,10 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      const res = await fetch("http://127.0.0.1:8000/cwc/custom-sounding-analysis", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(customInput),
+      analysisData = await apiPost("/cwc/custom-sounding-analysis", customInput, {
         signal: controller.signal
       });
       clearTimeout(timeoutId);
-      if (res.ok) {
-        analysisData = await res.json();
-      } else {
-        throw new Error("HTTP Status " + res.status);
-      }
     } catch (err) {
       console.warn("Custom sounding API failed, using client-side simulation engine fallback:", err);
       analysisData = clientSideForecast(customInput);
@@ -1466,11 +1426,11 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
   const handleExportFile = (format) => {
     if (!selectedDate || !selectedHistStation) return;
     if (format === "csv" || format === "json") {
-      const url = `http://127.0.0.1:8000/cwc/export/analysis?date=${selectedDate}&station=${selectedHistStation}&format=${format}`;
+      const url = buildApiUrl(`/cwc/export/analysis?date=${encodeURIComponent(selectedDate)}&station=${encodeURIComponent(selectedHistStation)}&format=${encodeURIComponent(format)}`);
       window.open(url, "_blank");
     } else if (format === "xlsx") {
       // Excel CSV fallback
-      const url = `http://127.0.0.1:8000/cwc/export/analysis?date=${selectedDate}&station=${selectedHistStation}&format=csv`;
+      const url = buildApiUrl(`/cwc/export/analysis?date=${encodeURIComponent(selectedDate)}&station=${encodeURIComponent(selectedHistStation)}&format=csv`);
       window.open(url, "_blank");
     } else if (format === "pdf") {
       window.print();
@@ -1485,11 +1445,11 @@ export default function ResearchHub({ activeCycle = "00Z", activeCaseStudy = nul
     const timestampParam = encodeURIComponent(signTimestamp || "");
 
     if (format === "csv" || format === "json") {
-      const url = `http://127.0.0.1:8000/cwc/export/analysis?date=${selectedDate}&station=${selectedHistStation}&format=${format}&verdict=${verdictParam}&reviewer_id=${reviewerIdParam}&comments=${commentsParam}&timestamp=${timestampParam}`;
+      const url = buildApiUrl(`/cwc/export/analysis?date=${encodeURIComponent(selectedDate)}&station=${encodeURIComponent(selectedHistStation)}&format=${encodeURIComponent(format)}&verdict=${verdictParam}&reviewer_id=${reviewerIdParam}&comments=${commentsParam}&timestamp=${timestampParam}`);
       window.open(url, "_blank");
     } else if (format === "xlsx") {
       // Excel CSV fallback
-      const url = `http://127.0.0.1:8000/cwc/export/analysis?date=${selectedDate}&station=${selectedHistStation}&format=csv&verdict=${verdictParam}&reviewer_id=${reviewerIdParam}&comments=${commentsParam}&timestamp=${timestampParam}`;
+      const url = buildApiUrl(`/cwc/export/analysis?date=${encodeURIComponent(selectedDate)}&station=${encodeURIComponent(selectedHistStation)}&format=csv&verdict=${verdictParam}&reviewer_id=${reviewerIdParam}&comments=${commentsParam}&timestamp=${timestampParam}`);
       window.open(url, "_blank");
     } else if (format === "pdf") {
       window.print();
@@ -1579,9 +1539,7 @@ const stationCodes = {
 
       try {
         const code = stationCodes[selectedStation] || "43150";
-        const res = await fetch(`http://127.0.0.1:8000/cwc/sounding-raw/${code}?cycle=${activeCycle}`);
-        if (!res.ok) throw new Error("Sounding data not available on backend.");
-        const data = await res.json();
+        const data = await apiGet(`/cwc/sounding-raw/${code}?cycle=${encodeURIComponent(activeCycle)}`);
         setRawData(data.raw_text);
         setSoundingMeta(data.metadata || {
           source_status: data.source_status,

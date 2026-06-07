@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { apiPost } from "../services/apiClient";
 
 export default function Login({ onLoginSuccess, onToggleMode, backendStatus }) {
   const [email, setEmail] = useState("");
@@ -36,12 +36,12 @@ export default function Login({ onLoginSuccess, onToggleMode, backendStatus }) {
 
     try {
       // Connect to FastAPI auth login endpoint
-      const response = await axios.post("http://127.0.0.1:8000/auth/login", {
+      const response = await apiPost("/auth/login", {
         email,
         password
       });
 
-      const { token, user } = response.data;
+      const { token, user } = response;
 
       // Validate matching role
       if (user.role !== role) {
@@ -54,7 +54,7 @@ export default function Login({ onLoginSuccess, onToggleMode, backendStatus }) {
       triggerBootSequence(token, user);
     } catch (err) {
       console.error("Auth Exception:", err);
-      const errMsg = err.response?.data?.detail || "Connection refused: Meteorological server is offline.";
+      const errMsg = err.response?.data?.detail || err.operationalMessage || "Connection refused: Meteorological server is offline.";
       setError(errMsg);
       setLoading(false);
     }

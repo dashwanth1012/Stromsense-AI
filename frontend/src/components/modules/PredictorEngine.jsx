@@ -6,6 +6,7 @@ import {
   safeNum,
   interpretOperationalIndex
 } from "../../utils/atmosphericUtils";
+import { apiGet } from "../../services/apiClient";
 
 export default function PredictorEngine({
   forecastData = [],
@@ -79,33 +80,23 @@ export default function PredictorEngine({
   useEffect(() => {
     let active = true;
     const fetchCapeTrace = async () => {
-      const ports = [8000, 8002, 8001, 8004];
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}/cwc/cape-traceability`);
-          if (res.ok) {
-            const data = await res.json();
-            if (active) {
-              setCapeTrace(data);
-              break;
-            }
-          }
-        } catch (e) {}
+      try {
+        const data = await apiGet("/cwc/cape-traceability");
+        if (active) {
+          setCapeTrace(data);
+        }
+      } catch (e) {
+        // silent fallback
       }
     };
     const fetchHistory = async () => {
-      const ports = [8000, 8002, 8001, 8004];
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}/history`);
-          if (res.ok) {
-            const data = await res.json();
-            if (active) {
-              setHistoryList(data);
-              break;
-            }
-          }
-        } catch (e) {}
+      try {
+        const data = await apiGet("/history");
+        if (active) {
+          setHistoryList(data);
+        }
+      } catch (e) {
+        // silent fallback
       }
     };
     fetchCapeTrace();
@@ -124,38 +115,26 @@ export default function PredictorEngine({
     let cancelled = false;
     const fetchScientific = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/cwc/probabilistic-forecast");
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          setProbabilisticPayload(data);
-        }
+        const data = await apiGet("/cwc/probabilistic-forecast");
+        if (!cancelled) setProbabilisticPayload(data);
       } catch {
         // silent fallback (UI already has deterministic CCSS + station fields)
       }
       try {
-        const res = await fetch("http://127.0.0.1:8000/cwc/thresholds");
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          setThresholdMeta(data);
-        }
+        const data = await apiGet("/cwc/thresholds");
+        if (!cancelled) setThresholdMeta(data);
       } catch {
         // silent fallback
       }
       try {
-        const res = await fetch("http://127.0.0.1:8000/cwc/observations");
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          if (Array.isArray(data)) setObservationalDB(data);
-        }
+        const data = await apiGet("/cwc/observations");
+        if (!cancelled && Array.isArray(data)) setObservationalDB(data);
       } catch {
         // silent fallback
       }
       try {
-        const res = await fetch("http://127.0.0.1:8000/cwc/decision-support");
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          setDecisionSupportPayload(data);
-        }
+        const data = await apiGet("/cwc/decision-support");
+        if (!cancelled) setDecisionSupportPayload(data);
       } catch {
         // silent fallback
       }

@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from "react";
-import axios from "axios";
 
 // Import layout components
 import Header from "./components/layout/Header";
@@ -18,6 +17,8 @@ import ErrorBoundary from "./components/layout/ErrorBoundary";
 
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import { apiGet, apiPost, isApiCancel } from "./services/apiClient";
+import { createAtmosphericSocket } from "./services/socketClient";
 
 // ==========================================
 // HIGH-FIDELITY ATMOSPHERIC FALLBACK DATA
@@ -110,10 +111,7 @@ function App() {
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const reconnectDelayRef = useRef(2000); // Start reconnect with 2s delay
-  const wsCandidatePortsRef = useRef([8000, 8002, 8001, 8004]);
-  const wsCandidateIndexRef = useRef(0);
   const fetchAbortRef = useRef(null);
-  const [activeBackendPort, setActiveBackendPort] = useState(8000);
 
   // Sync ref with state to prevent websocket closures reading stale states
   useEffect(() => {
@@ -125,10 +123,10 @@ function App() {
   // ==========================================
   const fetchCycleInfo = async () => {
     try {
-      const response = await axios.get(`http://127.0.0.1:${activeBackendPort}/cwc/cycle`);
-      setCycleInfo(response.data);
-      setActiveCycle(response.data.active_cycle);
-      return response.data;
+      const data = await apiGet("/cwc/cycle");
+      setCycleInfo(data);
+      setActiveCycle(data.active_cycle);
+      return data;
     } catch (e) {
       console.warn("App Console: Could not fetch active ingestion sounding cycle from backend.");
       return null;
@@ -143,8 +141,7 @@ function App() {
   const handleToggleCycle = async (newCycle) => {
     if (!token) return;
     try {
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.post(`http://127.0.0.1:${activeBackendPort}/cwc/cycle`, { cycle: newCycle }, config);
+      await apiPost("/cwc/cycle", { cycle: newCycle });
       await fetchCycleInfo();
       if (!activeCaseStudy) {
         await fetchWeatherData();
@@ -246,15 +243,17 @@ function App() {
       fetchAbortRef.current = new AbortController();
       const requestCfg = { signal: fetchAbortRef.current.signal };
       
-      const forecastResponse = await axios.get(`http://127.0.0.1:${activeBackendPort}/forecast`, requestCfg);
-      const historyResponse = await axios.get(`http://127.0.0.1:${activeBackendPort}/history`, requestCfg);
-      const trendResponse = await axios.get(`http://127.0.0.1:${activeBackendPort}/trend-analysis`, requestCfg);
-      const escalationResponse = await axios.get(`http://127.0.0.1:${activeBackendPort}/storm-escalation`, requestCfg);
+      const [forecastResponse, historyResponse, trendResponse, escalationResponse] = await Promise.all([
+        apiGet("/forecast", requestCfg),
+        apiGet("/history", requestCfg),
+        apiGet("/trend-analysis", requestCfg),
+        apiGet("/storm-escalation", requestCfg),
+      ]);
 
-      const safeForecast = validateForecastPayload(forecastResponse.data);
-      const safeHistory = Array.isArray(historyResponse.data) ? historyResponse.data : [];
-      const safeTrend = Array.isArray(trendResponse.data) ? trendResponse.data : [];
-      const safeEscalation = Array.isArray(escalationResponse.data) ? escalationResponse.data : [];
+      const safeForecast = validateForecastPayload(forecastResponse);
+      const safeHistory = Array.isArray(historyResponse) ? historyResponse : [];
+      const safeTrend = Array.isArray(trendResponse) ? trendResponse : [];
+      const safeEscalation = Array.isArray(escalationResponse) ? escalationResponse : [];
 
       setForecastData(safeForecast.length > 0 ? safeForecast : fallbackForecastData);
       setHistoryData(safeHistory.length > 0 ? safeHistory : fallbackHistoryData);
@@ -266,7 +265,7 @@ function App() {
       setDbStatus("ONLINE");
       setApiLatency(Date.now() - startTime);
     } catch (error) {
-      if (axios.isCancel?.(error) || error?.name === "CanceledError" || error?.name === "AbortError") {
+      if (isApiCancel(error)) {
         return;
       }
       console.warn("App Console: API backend is offline, utilizing local meteorological mock telemetry registry.");
@@ -287,13 +286,10 @@ function App() {
     }
 
     console.log("WebSocket: Attempting atmospheric feed handshake...");
-    const candidatePorts = wsCandidatePortsRef.current || [8000];
-    const port = candidatePorts[wsCandidateIndexRef.current] ?? 8000;
-    const socket = new WebSocket(`ws://127.0.0.1:${port}/stream/atmospheric`);
+    const socket = createAtmosphericSocket();
     wsRef.current = socket;
 
     let messageCount = 0;
-    let hasOpened = false;
     let frequencyTimer = setInterval(() => {
       setWsFrequency(messageCount);
       messageCount = 0;
@@ -301,9 +297,7 @@ function App() {
 
     socket.onopen = () => {
       console.log("WebSocket: Handshake accepted. Live streaming active.");
-      hasOpened = true;
       setWsStatus("LIVE");
-      setActiveBackendPort(port);
       reconnectDelayRef.current = 2000; // Reset reconnection delay
     };
 
@@ -338,16 +332,6 @@ function App() {
       console.warn("WebSocket: Atmospheric feed disconnected. Clean close:", event.wasClean);
       setWsStatus("OFFLINE FALLBACK");
       clearInterval(frequencyTimer);
-      // If the socket never opened, try alternate backend ports before exponential backoff.
-      const ports = wsCandidatePortsRef.current || [8000];
-      if (!hasOpened && wsCandidateIndexRef.current < ports.length - 1) {
-        wsCandidateIndexRef.current += 1;
-        reconnectDelayRef.current = 2000;
-        triggerReconnect();
-        return;
-      }
-      // After a successful open (or after exhausting candidates), stick to the best known port.
-      if (hasOpened) wsCandidateIndexRef.current = Math.min(wsCandidateIndexRef.current, ports.length - 1);
       triggerReconnect();
     };
 

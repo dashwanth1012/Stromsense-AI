@@ -9,6 +9,7 @@ import {
   Tooltip,
   ReferenceLine
 } from "recharts";
+import { apiGet } from "../../services/apiClient";
 
 // ========================================================
 // HIGH-FIDELITY HISTORICAL CONVECTIVE OBSERVATIONS DATASET
@@ -136,84 +137,60 @@ export default function AnalyticsDeck({
   useEffect(() => {
     const fetchValidationData = async () => {
       try {
-        const corrRes = await fetch("http://127.0.0.1:8000/cwc/correlation");
-        if (corrRes.ok) {
-          const cData = await corrRes.json();
-          setCorrelationData(cData);
-        }
+        const cData = await apiGet("/cwc/correlation");
+        setCorrelationData(cData);
       } catch (e) {
         console.warn("AnalyticsDeck: Correlation API offline. Using fallbacks.");
       }
       try {
-        const optRes = await fetch("http://127.0.0.1:8000/cwc/optimization");
-        if (optRes.ok) {
-          const oData = await optRes.json();
-          setOptimizationData(oData);
-        }
+        const oData = await apiGet("/cwc/optimization");
+        setOptimizationData(oData);
       } catch (e) {
         console.warn("AnalyticsDeck: Optimization API offline. Using fallbacks.");
       }
       try {
-        const verRes = await fetch("http://127.0.0.1:8000/cwc/verification");
-        if (verRes.ok) {
-          const vData = await verRes.json();
-          if (vData.recommended_thresholds && vData.verification_metrics) {
-            setOptimizationData({
-              recommended_thresholds: vData.recommended_thresholds,
-              validation_metrics: vData.verification_metrics,
-              derived_thresholds: vData.derived_thresholds || {},
-            });
-          }
+        const vData = await apiGet("/cwc/verification");
+        if (vData.recommended_thresholds && vData.verification_metrics) {
+          setOptimizationData({
+            recommended_thresholds: vData.recommended_thresholds,
+            validation_metrics: vData.verification_metrics,
+            derived_thresholds: vData.derived_thresholds || {},
+          });
         }
       } catch (e) {
         console.warn("AnalyticsDeck: Verification API offline. Using fallbacks.");
       }
       try {
-        const mlRes = await fetch("http://127.0.0.1:8000/cwc/ml-pipeline");
-        if (mlRes.ok) {
-          const mData = await mlRes.json();
-          setMlPipelineData(mData);
-        }
+        const mData = await apiGet("/cwc/ml-pipeline");
+        setMlPipelineData(mData);
       } catch (e) {
         console.warn("AnalyticsDeck: ML-Pipeline API offline. Using fallbacks.");
       }
       try {
-        const obsRes = await fetch("http://127.0.0.1:8000/cwc/observations");
-        if (obsRes.ok) {
-          const obsData = await obsRes.json();
-          if (Array.isArray(obsData)) {
-            setObservationalRecords(obsData);
-          }
+        const obsData = await apiGet("/cwc/observations");
+        if (Array.isArray(obsData)) {
+          setObservationalRecords(obsData);
         }
       } catch (e) {
         console.warn("AnalyticsDeck: Observations API offline. Using local fallback records.");
       }
       try {
-        const replayRes = await fetch("http://127.0.0.1:8000/cwc/replay-cases");
-        if (replayRes.ok) {
-          const replayData = await replayRes.json();
-          if (Array.isArray(replayData)) {
-            setReplayCases(replayData);
-          }
+        const replayData = await apiGet("/cwc/replay-cases");
+        if (Array.isArray(replayData)) {
+          setReplayCases(replayData);
         }
       } catch (e) {
         console.warn("AnalyticsDeck: Replay cases API offline. Using local fallback cases.");
       }
       try {
-        const advRes = await fetch("http://127.0.0.1:8000/cwc/verification-advanced");
-        if (advRes.ok) {
-          const advData = await advRes.json();
-          setAdvancedVerification(advData);
-        }
+        const advData = await apiGet("/cwc/verification-advanced");
+        setAdvancedVerification(advData);
       } catch (e) {
         console.warn("AnalyticsDeck: Advanced verification API offline. Using fallbacks.");
       }
       try {
-        const climRes = await fetch("http://127.0.0.1:8000/cwc/climatology");
-        if (climRes.ok) {
-          const climData = await climRes.json();
-          setClimatologyData(climData);
-        }
+        const climData = await apiGet("/cwc/climatology");
+        setClimatologyData(climData);
       } catch (e) {
         console.warn("AnalyticsDeck: Climatology API offline. Using fallbacks.");
       }
@@ -233,11 +210,8 @@ export default function AnalyticsDeck({
         k_index: String(threshK),
       });
       try {
-        const res = await fetch(`http://127.0.0.1:8000/cwc/threshold-research?${params.toString()}`);
-        if (res.ok) {
-          const data = await res.json();
-          setThresholdResearchData(data);
-        }
+        const data = await apiGet(`/cwc/threshold-research?${params.toString()}`);
+        setThresholdResearchData(data);
       } catch (e) {
         console.warn("AnalyticsDeck: Threshold research API offline. Using local contingency calculations.");
       }

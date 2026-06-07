@@ -16,6 +16,7 @@ import { Activity, AlertTriangle, FlaskConical, Waves, Satellite, Download } fro
 import { MapContainer, TileLayer, CircleMarker, Polyline, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { fallbackHistoricalDates } from "./fallback_data";
+import { apiGet, apiUpload } from "../../services/apiClient";
 
 function MapController({ centerLocation }) {
   const map = useMap();
@@ -178,17 +179,12 @@ export default function Phase3OpsModule({ moduleId, forecastData = [], trendData
   // Fetch backend endpoint data
   useEffect(() => {
     let cancelled = false;
-    const ports = [8000, 8002, 8001, 8004];
     const fetchJsonWithRetry = async (path) => {
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}${path}`);
-          if (res.ok) return await res.json();
-        } catch {
-          // ignore error, retry on next port
-        }
+      try {
+        return await apiGet(path);
+      } catch {
+        return null;
       }
-      return null;
     };
     const fetchAll = async () => {
       const calls = [
@@ -314,34 +310,23 @@ export default function Phase3OpsModule({ moduleId, forecastData = [], trendData
     const formData = new FormData();
     formData.append("file", file);
 
-    const ports = [8000, 8002, 8001, 8004];
-    for (const port of ports) {
-      try {
-        const response = await fetch(`http://127.0.0.1:${port}/cwc/analyze-historical-dataset`, {
-          method: "POST",
-          body: formData,
-        });
-        if (!response.ok) {
-          const detail = await response.json().catch(() => ({}));
-          throw new Error(detail?.detail || `HTTP ${response.status}`);
-        }
-        const payload = await response.json();
-        const analysis = payload?.analysis || null;
-        setFileAnalysis(analysis);
-        if (analysis) {
-          localStorage.setItem("latestFileAnalyzed", JSON.stringify({
-            file_name: analysis.file_name,
-            total_records: analysis.total_records,
-            thunderstorm_records: analysis.thunderstorm_records,
-            quality_score: analysis.quality_score,
-            analyzed_at: analysis.analyzed_at,
-          }));
-        }
-        setFileUploadStatus("Dataset analysis complete.");
-        return;
-      } catch (err) {
-        setFileUploadError(err.message);
+    try {
+      const payload = await apiUpload("/cwc/analyze-historical-dataset", formData);
+      const analysis = payload?.analysis || null;
+      setFileAnalysis(analysis);
+      if (analysis) {
+        localStorage.setItem("latestFileAnalyzed", JSON.stringify({
+          file_name: analysis.file_name,
+          total_records: analysis.total_records,
+          thunderstorm_records: analysis.thunderstorm_records,
+          quality_score: analysis.quality_score,
+          analyzed_at: analysis.analyzed_at,
+        }));
       }
+      setFileUploadStatus("Dataset analysis complete.");
+      return;
+    } catch (err) {
+      setFileUploadError(err.operationalMessage || err.message);
     }
 
     setFileUploadStatus("");

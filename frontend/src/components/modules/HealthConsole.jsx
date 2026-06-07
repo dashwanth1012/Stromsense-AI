@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { API_BASE_URL, WS_BASE_URL } from "../../config/environment";
+import { apiGet } from "../../services/apiClient";
 
 const initialMigrations = [
   {
@@ -167,17 +169,12 @@ export default function HealthConsole() {
   // Fetch actual backend system diagnostics
   useEffect(() => {
     let cancelled = false;
-    const ports = [8000, 8002, 8001, 8004];
     const fetchJsonWithRetry = async (path) => {
-      for (const p of ports) {
-        try {
-          const res = await fetch(`http://127.0.0.1:${p}${path}`);
-          if (res.ok) return await res.json();
-        } catch {
-          // ignore and retry
-        }
+      try {
+        return await apiGet(path);
+      } catch {
+        return null;
       }
-      return null;
     };
 
     const fetchDiagnostics = async () => {
@@ -392,7 +389,7 @@ export default function HealthConsole() {
         </div>
 
         <span className="font-technical" style={{ fontSize: "11px", color: "#64748b" }}>
-          HOST_NODE // LOCALHOST:8000
+          API_NODE // {API_BASE_URL || "ENV_CONFIGURED"}
         </span>
       </div>
 
@@ -779,7 +776,7 @@ export default function HealthConsole() {
           }}>
             <div>[{sysStatus?.last_sync || "2026-05-22 21:30:04"}] INFO: StormSense core server diagnostics initiated.</div>
             <div>[{sysStatus?.last_sync || "2026-05-22 21:30:05"}] INFO: MySQL pool connection check: 10 connections allocated. DB status: {sysStatus?.database_status || "CONNECTED"}.</div>
-            <div>[{sysStatus?.last_sync || "2026-05-22 21:30:08] INFO: WS stream listening on ws://127.0.0.1:8000/stream/atmospheric. State: STABLE."}</div>
+            <div>[{sysStatus?.last_sync || `2026-05-22 21:30:08] INFO: WS stream listening on ${WS_BASE_URL || "ENV_CONFIGURED"}/stream/atmospheric. State: STABLE.`}</div>
             <div>[{sysStatus?.last_sync || "2026-05-22 21:35:10"}] INFO: Total DB transactions logged: {sysStatus?.telemetry_metrics?.transaction_count || 0}.</div>
             <div>[{sysStatus?.last_sync || "2026-05-22 21:40:12"}] INFO: Telemetry payload received. Active Websockets: {sysStatus?.telemetry_metrics?.active_websockets || 0}.</div>
             <div style={{ color: "#10b981" }}>[{sysStatus?.last_sync || "2026-05-22 21:48:55"}] SUCCESS: Meteorological validation scan executed cleanly. System nominal.</div>
