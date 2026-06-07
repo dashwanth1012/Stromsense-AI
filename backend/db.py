@@ -1,12 +1,8 @@
-import mysql.connector
+from connection_pool import fetch_all, fetch_one, get_database_status
 
-db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="root",
-    database="stormsense_ai"
-)
 
-cursor = db.cursor()
+def health_check():
+    return get_database_status()
 
-print("✅ MySQL Connected Successfully")
+
+__all__ = ["fetch_all", "fetch_one", "health_check"]

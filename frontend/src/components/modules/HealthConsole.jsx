@@ -57,7 +57,7 @@ const initialMigrations = [
     name: "HISTORICAL_WEATHER_INDEX",
     status: "PAUSED",
     type: "Database",
-    source: "mysql://localhost:3306/stormsense_db",
+    source: "postgresql://supabase/stormsense_public",
     destination: "csv://data/live_dataset.csv",
     speed: "0 KB/s",
     progress: 82,

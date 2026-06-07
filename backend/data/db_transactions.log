@@ -952,3 +952,30 @@
 [2026-06-07 21:27:06.329858] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Chennai saved. Total: 18
 [2026-06-07 21:27:06.369899] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Kolkata saved. Total: 19
 [2026-06-07 21:27:06.444509] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Machilipatnam saved. Total: 20
+[2026-06-07 21:35:13.700400] ACTION: LOGIN | STATUS: SUCCESS | DETAIL: User saitarun2005p@gmail.com logged in.
+[2026-06-07 22:09:30.308297] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Visakhapatnam.
+[2026-06-07 22:09:30.486429] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Chennai.
+[2026-06-07 22:09:30.637014] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Kolkata.
+[2026-06-07 22:09:30.772830] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Hyderabad.
+[2026-06-07 22:09:30.915414] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Machilipatnam.
+[2026-06-07 22:09:36.580447] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Visakhapatnam.
+[2026-06-07 22:40:31.680176] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Machilipatnam.
+[2026-06-07 22:47:55.515832] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Visakhapatnam.
+[2026-06-07 22:55:31.283917] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Kolkata.
+[2026-06-07 22:55:31.325380] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Machilipatnam.
+[2026-06-07 23:01:28.436795] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Visakhapatnam.
+[2026-06-07 23:01:28.793669] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Chennai.
+[2026-06-07 23:01:29.263759] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Kolkata.
+[2026-06-07 23:01:29.699461] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Hyderabad.
+[2026-06-07 23:01:29.902745] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Machilipatnam.
+[2026-06-07 23:16:11.070288] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Visakhapatnam saved. Total: 1
+[2026-06-07 23:16:11.444472] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Chennai saved. Total: 2
+[2026-06-07 23:16:11.808013] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Kolkata saved. Total: 3
+[2026-06-07 23:16:12.168008] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Hyderabad saved. Total: 4
+[2026-06-07 23:16:12.522148] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Machilipatnam saved. Total: 5
+[2026-06-07 23:16:31.406105] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Visakhapatnam.
+[2026-06-07 23:16:31.477898] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Chennai.
+[2026-06-07 23:16:31.555950] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Kolkata.
+[2026-06-07 23:16:31.654346] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Hyderabad.
+[2026-06-07 23:16:31.750329] ACTION: INSERT | STATUS: SKIPPED | DETAIL: Persistence disabled; DATABASE_URL not configured for Machilipatnam.
+[2026-06-07 23:16:42.693307] ACTION: LOGIN | STATUS: SUCCESS | DETAIL: User chief@stormsense.gov.in logged in.

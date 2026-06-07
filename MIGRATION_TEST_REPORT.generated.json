@@ -1,0 +1,20 @@
+{
+  "dump_dir": "C:\\Users\\USER\\Documents\\dumps\\Dump20260607",
+  "source_tables": {
+    "users": 3,
+    "thunderstorm_forecasts": 942
+  },
+  "optional_tables_not_present_in_mysql_export": [
+    "historical_records",
+    "thunderstorm_registry",
+    "verification_results",
+    "uploaded_datasets",
+    "reviewer_dashboard_records",
+    "audit_logs",
+    "roles",
+    "profiles",
+    "audit_login"
+  ],
+  "applied": false,
+  "validation": {}
+}

@@ -15,6 +15,7 @@ pandas==3.0.3
 pydantic==2.13.4
 pydantic_core==2.46.4
 python-multipart==0.0.20
+python-dotenv>=1.0,<2.0
 python-dateutil==2.9.0.post0
 requests==2.34.2
 six==1.17.0
@@ -27,3 +28,6 @@ urllib3==2.7.0
 uvicorn==0.47.0
 websockets==15.0.1
 wsproto==1.2.0
+SQLAlchemy>=2.0,<3.0
+psycopg2-binary>=2.9,<3.0
+supabase>=2.0,<3.0

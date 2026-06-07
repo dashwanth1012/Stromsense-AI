@@ -1,8 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Header, HTTPException, Depends, status, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
-import mysql.connector
-import mysql.connector.pooling
 import requests
 import joblib
 import pandas as pd
@@ -24,6 +22,14 @@ from pydantic import BaseModel
 import thermo
 import analysis_engines
 import fetch_sounding
+from connection_pool import (
+    database_configured,
+    execute_write,
+    fetch_all,
+    fetch_one,
+    get_database_status,
+    initialize_supabase_schema,
+)
 
 # ==========================================
 # OPERATIONAL SOUNDING CYCLE LOCK ENGINE
@@ -405,150 +411,94 @@ stations = {
 }
 
 # ==========================================
-# MYSQL CONNECTION POOL & TRANSACTIONS
+# SUPABASE POSTGRESQL CONNECTION POOL & TRANSACTIONS
 # ==========================================
 
 db_transaction_counter = 0
-db_pool = None
 
 try:
-    db_pool = mysql.connector.pooling.MySQLConnectionPool(
-        pool_name="stormsense_pool",
-        pool_size=10,
-        host="localhost",
-        user="root",
-        password="root",
-        database="stormsense_db"
-    )
-    print("[DB] MySQL Connection Pool Initialized Successfully (Size: 10)")
+    if initialize_supabase_schema():
+        print("[DB] Supabase PostgreSQL schema initialized successfully.")
+    else:
+        print("[DB] Supabase PostgreSQL not configured. Set DATABASE_URL for persistence.")
 except Exception as e:
-    print("[DB] MySQL Connection Pool Initialization Failed:", e)
+    print("[DB] Supabase PostgreSQL initialization failed:", e)
 
 def log_transaction(action, status, detail=""):
     try:
         os.makedirs("data", exist_ok=True)
         with open("data/db_transactions.log", "a", encoding="utf-8") as log_file:
             log_file.write(f"[{datetime.now()}] ACTION: {action} | STATUS: {status} | DETAIL: {detail}\n")
+        if database_configured():
+            execute_write(
+                """
+                INSERT INTO audit_logs (action, status, detail)
+                VALUES (:action, :status, :detail)
+                """,
+                {"action": action, "status": status, "detail": detail},
+            )
     except Exception as err:
         print("Logging Error:", err)
 
-def save_to_mysql(data):
+def save_forecast_record(data):
     global db_transaction_counter
-    connection = None
-    cursor = None
     try:
-        if db_pool:
-            connection = db_pool.get_connection()
-        else:
-            connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="root",
-                database="stormsense_db",
-                autocommit=True
-            )
-        cursor = connection.cursor()
-        query = """
+        if not database_configured():
+            log_transaction("INSERT", "SKIPPED", f"Persistence disabled; DATABASE_URL not configured for {data.get('station')}.")
+            return
+        execute_write("""
         INSERT INTO thunderstorm_forecasts (
             station, station_code, cape, lifted_index, sweat_index, k_index, pwat, forecast, storm_probability
         )
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-        """
-        values = (
-            data["station"],
-            data["station_code"],
-            data["cape"],
-            data["lifted_index"],
-            data["sweat_index"],
-            data["k_index"],
-            data["pwat"],
-            data["forecast"],
-            data["storm_probability"]
+        VALUES (:station, :station_code, :cape, :lifted_index, :sweat_index, :k_index, :pwat, :forecast, :storm_probability)
+        """, {
+            "station": data["station"],
+            "station_code": data["station_code"],
+            "cape": data["cape"],
+            "lifted_index": data["lifted_index"],
+            "sweat_index": data["sweat_index"],
+            "k_index": data["k_index"],
+            "pwat": data["pwat"],
+            "forecast": data["forecast"],
+            "storm_probability": data["storm_probability"],
+        }
         )
-        cursor.execute(query, values)
-        connection.commit()
         db_transaction_counter += 1
         log_transaction("INSERT", "SUCCESS", f"Station {data['station']} saved. Total: {db_transaction_counter}")
-        print("MYSQL SAVE SUCCESS")
+        print("SUPABASE POSTGRES SAVE SUCCESS")
     except Exception as e:
         log_transaction("INSERT", "FAILED", f"Station {data.get('station')} error: {str(e)}")
-        print("MYSQL ERROR:", e)
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
+        print("SUPABASE POSTGRES ERROR:", e)
 
 # ==========================================
 # METEOROLOGICAL OPERATIONS USER ENGINE & OVERRIDES
 # ==========================================
 
 def init_db():
-    connection = None
-    cursor = None
     try:
-        if db_pool:
-            connection = db_pool.get_connection()
-        else:
-            connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="root",
-                database="stormsense_db",
-                autocommit=True
-            )
-        cursor = connection.cursor()
-        
-        # User Authentication Table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255) NOT NULL,
-            email VARCHAR(255) UNIQUE NOT NULL,
-            password VARCHAR(255) NOT NULL,
-            role VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        
-        # Convective Telemetry Table
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS thunderstorm_forecasts (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            station VARCHAR(255) NOT NULL,
-            station_code VARCHAR(50) NOT NULL,
-            cape DOUBLE NOT NULL,
-            lifted_index DOUBLE NOT NULL,
-            sweat_index DOUBLE NOT NULL,
-            k_index DOUBLE NOT NULL,
-            pwat DOUBLE NOT NULL,
-            forecast VARCHAR(255) NOT NULL,
-            storm_probability INT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        """)
-        connection.commit()
+        if not initialize_supabase_schema():
+            print("[DB] DATABASE_URL not configured; persistent auth/forecast history disabled for this process.")
+            return
         
         # Seeding MET_CHIEF demonstration user if database is empty
-        cursor.execute("SELECT COUNT(*) FROM users")
-        count = cursor.fetchone()[0]
+        row = fetch_one("SELECT COUNT(*) AS count FROM users")
+        count = int(row.get("count", 0)) if row else 0
         if count == 0:
             chief_pass_hash = hashlib.sha256("admin123".encode()).hexdigest()
-            cursor.execute("""
+            execute_write("""
             INSERT INTO users (name, email, password, role)
-            VALUES (%s, %s, %s, %s)
-            """, ("Chief Meteorologist", "chief@stormsense.gov.in", chief_pass_hash, "MET_CHIEF"))
-            connection.commit()
+            VALUES (:name, :email, :password, :role)
+            """, {
+                "name": "Chief Meteorologist",
+                "email": "chief@stormsense.gov.in",
+                "password": chief_pass_hash,
+                "role": "MET_CHIEF",
+            })
             print("[DB] Default MET_CHIEF Demo Account Seeded Successfully")
         
         print("[DB] Database schema initialized successfully")
     except Exception as e:
         print("[DB] Database schema initialization failed:", e)
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
 
 # Execute Database initialization on startup
 init_db()
@@ -561,34 +511,30 @@ overrides = {}
 
 @app.post("/auth/signup")
 def signup(payload: SignupRequest):
-    connection = None
-    cursor = None
     try:
-        if db_pool:
-            connection = db_pool.get_connection()
-        else:
-            connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="root",
-                database="stormsense_db",
-                autocommit=True
+        if not database_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Supabase PostgreSQL DATABASE_URL is not configured."
             )
-        cursor = connection.cursor()
         
-        cursor.execute("SELECT id FROM users WHERE email = %s", (payload.email,))
-        if cursor.fetchone():
+        existing_user = fetch_one("SELECT id FROM users WHERE email = :email", {"email": payload.email})
+        if existing_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Operational email already registered in system."
             )
             
         pass_hash = hashlib.sha256(payload.password.encode()).hexdigest()
-        cursor.execute("""
+        execute_write("""
         INSERT INTO users (name, email, password, role)
-        VALUES (%s, %s, %s, %s)
-        """, (payload.name, payload.email, pass_hash, payload.role))
-        connection.commit()
+        VALUES (:name, :email, :password, :role)
+        """, {
+            "name": payload.name,
+            "email": payload.email,
+            "password": pass_hash,
+            "role": payload.role,
+        })
         
         log_transaction("SIGNUP", "SUCCESS", f"Registered user {payload.email} as {payload.role}")
         return {"message": "Atmospheric operator registered successfully."}
@@ -600,38 +546,31 @@ def signup(payload: SignupRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
         )
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
 
 @app.post("/auth/login")
 def login(payload: LoginRequest):
-    connection = None
-    cursor = None
     try:
-        if db_pool:
-            connection = db_pool.get_connection()
-        else:
-            connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="root",
-                database="stormsense_db",
-                autocommit=True
+        if not database_configured():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Supabase PostgreSQL DATABASE_URL is not configured."
             )
-        cursor = connection.cursor()
         
-        cursor.execute("SELECT id, name, email, password, role FROM users WHERE email = %s", (payload.email,))
-        user_row = cursor.fetchone()
+        user_row = fetch_one(
+            "SELECT id, name, email, password, role FROM users WHERE email = :email",
+            {"email": payload.email},
+        )
         if not user_row:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid operational email or password."
             )
             
-        uid, name, email, pass_hash, role = user_row
+        uid = user_row["id"]
+        name = user_row["name"]
+        email = user_row["email"]
+        pass_hash = user_row["password"]
+        role = user_row["role"]
         
         input_hash = hashlib.sha256(payload.password.encode()).hexdigest()
         if input_hash != pass_hash:
@@ -650,6 +589,13 @@ def login(payload: LoginRequest):
         token = create_jwt_token(token_payload)
         
         log_transaction("LOGIN", "SUCCESS", f"User {email} logged in.")
+        execute_write(
+            """
+            INSERT INTO audit_login (user_id, email, status, detail)
+            VALUES (:user_id, :email, :status, :detail)
+            """,
+            {"user_id": uid, "email": email, "status": "SUCCESS", "detail": "JWT session issued"},
+        )
         return {
             "token": token,
             "user": {
@@ -663,15 +609,18 @@ def login(payload: LoginRequest):
         raise he
     except Exception as e:
         log_transaction("LOGIN", "FAILED", f"Error logging in {payload.email}: {str(e)}")
+        if database_configured():
+            execute_write(
+                """
+                INSERT INTO audit_login (email, status, detail)
+                VALUES (:email, :status, :detail)
+                """,
+                {"email": payload.email, "status": "FAILED", "detail": str(e)},
+            )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
         )
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
 
 def get_current_user(authorization: str = Header(None)):
     if not authorization or not authorization.startswith("Bearer "):
@@ -1324,7 +1273,7 @@ def fetch_station_data(
                 station_forecast["nwx_probability"] = p0.get("nwx_probability", 0)
             station_forecast.update(build_decision_support(station_forecast))
             if persist:
-                save_to_mysql(station_forecast)
+                save_forecast_record(station_forecast)
             sounding_cycle_lock["station_cache"][cache_key] = station_forecast
             return station_forecast
 
@@ -1470,7 +1419,7 @@ def fetch_station_data(
         print("Ingested sounding profile:", station_forecast)
 
         if persist:
-            save_to_mysql(station_forecast)
+            save_forecast_record(station_forecast)
 
             try:
                 os.makedirs("data", exist_ok=True)
@@ -1578,22 +1527,8 @@ def history():
     history_data = []
 
     try:
-
-        connection = mysql.connector.connect(
-
-            host="localhost",
-            user="root",
-            password="root",
-            database="stormsense_db"
-
-        )
-
-        cursor = connection.cursor()
-
-        sql = """
-
+        rows = fetch_all("""
         SELECT
-
             station,
             cape,
             lifted_index,
@@ -1603,41 +1538,26 @@ def history():
             forecast,
             storm_probability,
             created_at
-
         FROM thunderstorm_forecasts
-
         ORDER BY created_at DESC
-
         LIMIT 100
-
-        """
-
-        cursor.execute(sql)
-
-        rows = cursor.fetchall()
-
+        """)
         for row in rows:
-
             history_data.append({
-
-                "station": row[0],
-                "cape": row[1],
-                "lifted_index": row[2],
-                "sweat_index": row[3],
-                "k_index": row[4],
-                "pwat": row[5],
-                "forecast": row[6],
-                "storm_probability": row[7],
-                "created_at": str(row[8])
-
+                "station": row.get("station"),
+                "cape": row.get("cape"),
+                "lifted_index": row.get("lifted_index"),
+                "sweat_index": row.get("sweat_index"),
+                "k_index": row.get("k_index"),
+                "pwat": row.get("pwat"),
+                "forecast": row.get("forecast"),
+                "storm_probability": row.get("storm_probability"),
+                "created_at": str(row.get("created_at"))
             })
-
-        cursor.close()
-        connection.close()
 
     except Exception as e:
 
-        print("HISTORY ERROR:", e)
+        print("POSTGRES HISTORY ERROR:", e)
 
     return history_data
 
@@ -1780,13 +1700,8 @@ async def stream_atmospheric(websocket: WebSocket):
 
 @app.get("/system-status")
 def system_status():
-    db_state = "CONNECTED" if db_pool else "OFFLINE"
-    try:
-        if db_pool:
-            conn = db_pool.get_connection()
-            conn.close()
-    except Exception:
-        db_state = "OFFLINE"
+    db_info = get_database_status()
+    db_state = db_info["status"]
 
     return {
         "backend_status": "ONLINE",
@@ -1794,10 +1709,11 @@ def system_status():
         "active_stations": len(stations),
         "last_sync": str(datetime.now()),
         "telemetry_metrics": {
-            "connection_pool_name": "stormsense_pool",
-            "pool_size": 10,
+            "connection_pool_name": "supabase_postgresql_pool",
+            "pool_size": db_info.get("pool_size", 0),
             "transaction_count": db_transaction_counter,
-            "active_websockets": len(manager.active_connections)
+            "active_websockets": len(manager.active_connections),
+            "storage_buckets": db_info.get("storage_buckets", [])
         }
     }
 
