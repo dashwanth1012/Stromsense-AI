@@ -932,3 +932,6 @@
 [2026-06-07 21:06:10.988247] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Visakhapatnam saved. Total: 1
 [2026-06-07 21:06:11.398986] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Kolkata saved. Total: 2
 [2026-06-07 21:06:11.806957] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Machilipatnam saved. Total: 3
+[2026-06-07 21:11:10.938549] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Visakhapatnam saved. Total: 4
+[2026-06-07 21:11:11.094587] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Hyderabad saved. Total: 5
+[2026-06-07 21:11:11.158303] ACTION: INSERT | STATUS: SUCCESS | DETAIL: Station Machilipatnam saved. Total: 6
