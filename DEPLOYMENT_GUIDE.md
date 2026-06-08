@@ -1,93 +1,38 @@
-# StormSense AI Supabase Deployment Guide
+# StormSense AI Deployment Guide
 
-## 1. Supabase
+## Target Deployment
+StormSense AI is configured for a single Render Web Service serving both FastAPI APIs and the Vite React frontend from one URL.
 
-1. Create a Supabase project.
-2. Open SQL Editor.
-3. Run `supabase_schema.sql`.
-4. Confirm these storage buckets exist:
-   - `historical-archives`
-   - `uploaded-soundings`
-   - `review-exports`
-   - `forecast-exports`
-   - `bulletins`
-5. Copy the Supabase PostgreSQL connection string.
-
-## 2. Data Migration
-
-Install backend requirements, then run:
-
-```powershell
-cd "C:\Users\USER\Thunderstorm analysis"
-$env:DATABASE_URL="postgresql://..."
-backend\venv\Scripts\python.exe migration_runner.py --apply
-```
-
-Dry-run without writing:
-
-```powershell
-backend\venv\Scripts\python.exe migration_runner.py
-```
-
-Expected source counts:
-
-- `users`: 3
-- `thunderstorm_forecasts`: 942
-
-## 3. Railway Backend
-
-Set environment variables:
-
+## Render Build Process
 ```text
-DATABASE_URL=
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-JWT_SECRET=
-```
-
-Install command:
-
-```text
+python -m pip install --upgrade pip
 pip install -r backend/requirements.txt
-```
-
-Start command:
-
-```text
-cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT
-```
-
-## 4. Vercel Frontend
-
-Build command:
-
-```text
 cd frontend && npm install && npm run build
 ```
 
-Output directory:
-
+## Render Start Command
 ```text
-frontend/dist
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
 ```
 
-Configure frontend API base URL to the Railway backend URL if deployment introduces a non-local API host.
+## Environment Variables
+| Variable | Purpose |
+| --- | --- |
+| DATABASE_URL | Supabase PostgreSQL connection string with SSL mode. |
+| SUPABASE_URL | Supabase project API URL. |
+| SUPABASE_ANON_KEY | Client-safe Supabase key where needed. |
+| SUPABASE_SERVICE_ROLE_KEY | Server-side Supabase service key; never expose in frontend. |
+| JWT_SECRET | Authentication signing secret. |
+| CORS_ALLOW_ORIGINS | Optional comma-separated CORS allow-list. |
 
-## 5. Deployment Validation
+## Static Frontend Serving
+FastAPI serves `frontend/dist/assets` at `/assets` and returns `frontend/dist/index.html` for browser navigation routes.
 
-Required smoke checks:
+## API Preservation
+Backend prefixes `/auth`, `/cwc`, `/history`, `/system-status`, `/stream`, `/trend-analysis`, and `/storm-escalation` are protected from SPA fallback.
 
-- `/`
-- `/forecast`
-- `/history`
-- `/cwc/historical-dates`
-- `/cwc/historical-observations`
-- `/cwc/cape-traceability`
-- `/cwc/latest-file-analyzed`
-- `/system-status`
-- `/stream/atmospheric`
-
-## 6. Rollback
-
-The migration is additive at the code level. If Supabase is unavailable, unset `DATABASE_URL` to keep non-persistent forecast/archive workflows running while persistence is repaired.
+## Troubleshooting
+- If the Render URL returns backend JSON at `/`, confirm the frontend build exists before startup.
+- If `/forecast` opens JSON in a browser, confirm the browser sends `Accept: text/html`; API calls use `Accept: application/json`.
+- If uploads fail, verify `python-multipart`, `openpyxl`, and `xlrd` are installed from requirements.
+- If database writes fail, verify `DATABASE_URL` and Supabase network access.

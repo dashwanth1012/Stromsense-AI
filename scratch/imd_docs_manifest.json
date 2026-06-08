@@ -1,0 +1,26 @@
+{
+  "generated": "2026-06-08",
+  "routes": 54,
+  "schema_tables": 12,
+  "historical_archive_records": 360,
+  "observational_records": 240,
+  "screenshots": 46,
+  "files": [
+    "MVP_DOCUMENTATION_VERSION.md",
+    "FULL_DOCUMENTATION_EXPANSION_PLAN.md",
+    "Architecture_Diagrams.md",
+    "SCREENSHOT_ANALYSIS_REPORT.md",
+    "REQUIREMENTS_SPECIFICATION.md",
+    "DESIGN_SYSTEM_GUIDE.md",
+    "API_Reference.md",
+    "ACCESSIBILITY_AUDIT.md",
+    "SECURITY_GUIDE.md",
+    "TESTING_REPORT.md",
+    "User_Manual.md",
+    "Developer_Manual.md",
+    "Deployment_Guide.md",
+    "StormSense_AI_IMD_Documentation.md",
+    "StormSense_AI_IMD_Documentation.docx",
+    "StormSense_AI_IMD_Documentation_v2_1.pdf"
+  ]
+}
